@@ -7,7 +7,7 @@ module APNS
   @host = 'gateway.sandbox.push.apple.com'
   @port = 2195
   # openssl pkcs12 -in mycert.p12 -out client-cert.pem -nodes -clcerts
-  @pem = nil # this should be the path of the pem file not the contentes
+  @pem_data = nil # this should be the contents of the pem file
   @pass = nil
 
   @persistent = false
@@ -18,7 +18,7 @@ module APNS
   @ssl = nil
 
   class << self
-    attr_accessor :host, :pem, :port, :pass
+    attr_accessor :host, :pem_data, :port, :pass
   end
 
   def self.start_persistence
@@ -95,37 +95,32 @@ protected
       @sock = nil
     end
   end
-  
-  def self.open_connection
-    raise "The path to your pem file is not set. (APNS.pem = /path/to/cert.pem)" unless self.pem
-    raise "The path to your pem file does not exist!" unless File.exist?(self.pem)
-    
-    context      = OpenSSL::SSL::SSLContext.new
-    context.cert = OpenSSL::X509::Certificate.new(File.read(self.pem))
-    context.key  = OpenSSL::PKey::RSA.new(File.read(self.pem), self.pass)
 
+  def self.open_connection
     sock         = TCPSocket.new(self.host, self.port)
-    ssl          = OpenSSL::SSL::SSLSocket.new(sock,context)
+    ssl          = OpenSSL::SSL::SSLSocket.new(sock, self.context)
     ssl.connect
 
     return sock, ssl
   end
 
   def self.feedback_connection
-    raise "The path to your pem file is not set. (APNS.pem = /path/to/cert.pem)" unless self.pem
-    raise "The path to your pem file does not exist!" unless File.exist?(self.pem)
-    
-    context      = OpenSSL::SSL::SSLContext.new
-    context.cert = OpenSSL::X509::Certificate.new(File.read(self.pem))
-    context.key  = OpenSSL::PKey::RSA.new(File.read(self.pem), self.pass)
-    
     fhost = self.host.gsub('gateway','feedback')
 
     sock         = TCPSocket.new(fhost, 2196)
-    ssl          = OpenSSL::SSL::SSLSocket.new(sock, context)
+    ssl          = OpenSSL::SSL::SSLSocket.new(sock, self.context)
     ssl.connect
 
     return sock, ssl
   end
-  
+
+  def self.context
+    raise ConfigurationError.new("Pem_data not set! (APNS.pem_data = File.read(path/to/pem/file))") unless self.pem_data
+
+    context      = OpenSSL::SSL::SSLContext.new
+    context.cert = OpenSSL::X509::Certificate.new(self.pem_data)
+    context.key  = OpenSSL::PKey::RSA.new(self.pem_data, self.pass)
+    context
+  end
+
 end
