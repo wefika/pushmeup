@@ -27,6 +27,31 @@ describe Pushmeup do
 
     end
 
+    describe "Packed Message" do
+      it "should generate packed message with all params" do
+        a = APNS::Notification.new("123", {alert: "hi", badge: "+1", sound: 'default', content_available: true})
+
+        subject = a.packaged_message
+
+        subject.should =~ /hi/
+        subject.should =~ /\+1/
+        subject.should =~ /default/
+        subject.should =~ /true/
+      end
+
+      it "should generate packed message with other params" do
+        a = APNS::Notification.new("123", {alert: "hi", other: { 'aps' => { 'extras' => { 'id' => '321' } } }})
+
+        subject = a.packaged_message
+        puts subject
+
+        subject.should =~ /hi/
+        subject.should =~ /extras/
+        subject.should =~ /id/
+        subject.should =~ /321/
+      end
+    end
+
   end
 
   describe "GCM" do
