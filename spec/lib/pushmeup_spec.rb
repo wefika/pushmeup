@@ -43,7 +43,6 @@ describe Pushmeup do
         a = APNS::Notification.new("123", {alert: "hi", other: { 'aps' => { 'extras' => { 'id' => '321' } } }})
 
         subject = a.packaged_message
-        puts subject
 
         subject.should =~ /hi/
         subject.should =~ /extras/
