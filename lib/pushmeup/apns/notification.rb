@@ -34,8 +34,13 @@ module APNS
       aps['aps']['sound'] = self.sound if self.sound
       aps['aps']['content_available'] = self.content_available if self.content_available
 
-      aps['aps'].merge!(self.other.delete('aps')) if self.other.is_a?(Hash)
-      aps.merge!(self.other) if self.other
+      if self.other.is_a?(Hash)
+        aps_other = self.other.dup
+        extras = aps_other.delete('aps') || {}
+
+        aps['aps'].merge!(extras)
+        aps.merge!(aps_other)
+      end
 
       aps.to_json.gsub(/\\u([\da-fA-F]{4})/) {|m| [$1].pack("H*").unpack("n*").pack("U*")}
     end
